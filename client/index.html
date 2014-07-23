@@ -5,10 +5,154 @@
 	<link rel="stylesheet" href="http://code.jquery.com/mobile/1.1.1/jquery.mobile-1.1.1.min.css" />
 	<script src="http://code.jquery.com/jquery-1.7.1.min.js"></script>
 	<script src="http://code.jquery.com/mobile/1.1.1/jquery.mobile-1.1.1.min.js"></script>
+    <script>
+        // Some sample categorized data. This data is in-memory
+        // for demonstration purposes, but could be loaded dynamically
+        // via ajax.
+        var categoryData = {
+            chantecler: {
+                name: "Chantecler",
+                description: "Chantecler good food",
+                items: [
+                    {name: "Beef-Tartare Tacos"}
+                ]
+            },
+            leslievillePumps: {
+                name: "LeslievillePumps",
+                description: "LeslievillePumps good food",
+                items: [
+                    {name: "Smoked butter-chicken sandwich"}
+                ]
+            },
+            rockLobster: {
+                name: "RockLobster",
+                description: "RockLobster food.",
+                items: [
+                    {name: "Cheddar crack biscuits"}                 
+                ]
+            },
+            barIsabel: {
+                name: "BarIsabel",
+                description: "BarIsabel food.",
+                items: [
+                    {name: "Champion Platter"}                 
+                ]
+            },
+            burgerPriest: {
+                name: "BurgerPriest",
+                description: "BurgerPriest food.",
+                items: [
+                    {name: "Riggs and Murtaugh Shake"},
+                    {name: "The Four Horsemen of the Apocalypse"},
+                    {name: "Magnum"}
+                ]
+            }
+        };
+
+        // Load the data for a specific category, based on
+        // the URL passed in. Generate markup for the items in the
+        // category, inject it into an embedded page, and then make
+        // that page the current active page.
+        function showCategory( urlObj, options )
+        {
+            var categoryName = urlObj.hash.replace( /.*category=/, "" ),
+                                             
+            // Get the object that represents the category we
+            // are interested in. Note, that at this point we could
+            // instead fire off an ajax request to fetch the data, but
+            // for the purposes of this sample, it's already in memory.
+            category = categoryData[ categoryName ],
+
+            // The pages we use to display our content are already in
+            // the DOM. The id of the page we are going to write our
+            // content into is specified in the hash before the '?'.
+            pageSelector = urlObj.hash.replace( /\?.*$/, "" );
+
+            if ( category ) {
+                // Get the page we are going to dump our content into.
+                var $page = $( pageSelector ),
+
+                    // Get the header for the page.
+                    $header = $page.children( ":jqmData(role=header)" ),
+
+                    // Get the content area element for the page.
+                    $content = $page.children( ":jqmData(role=content)" ),
+
+                    // The markup we are going to inject into the content
+                    // area of the page.
+                    markup = "<p>" + category.description + "</p><ul data-role='listview' data-inset='true'>",
+
+                    // The array of items for this category.
+                    cItems = category.items,
+
+                    // The number of items in the category.
+                    numItems = cItems.length;
+
+                // Generate a list item for each item in the category
+                // and add it to our markup.
+                for ( var i = 0; i < numItems; i++ ) {
+                    markup += "<li>" + cItems[i].name + "</li>";
+                }
+                markup += "</ul>";
+
+                // Find the h1 element in our header and inject the name of
+                // the category into it.
+                $header.find( "h1" ).html( category.name );
+
+                // Inject the category items markup into the content element.
+                $content.html( markup );
+
+                // Pages are lazily enhanced. We call page() on the page
+                // element to make sure it is always enhanced before we
+                // attempt to enhance the listview markup we just injected.
+                // Subsequent calls to page() are ignored since a page/widget
+                // can only be enhanced once.
+                $page.page();
+
+                // Enhance the listview we just injected.
+                $content.find( ":jqmData(role=listview)" ).listview();
+
+                // We don't want the data-url of the page we just modified
+                // to be the url that shows up in the browser's location field,
+                // so set the dataUrl option to the URL for the category
+                // we just loaded.
+                options.dataUrl = urlObj.href;
+
+                // Now call changePage() and tell it to switch to
+                // the page we just modified.
+                $.mobile.changePage( $page, options );
+            }
+        }
+
+
+        // Listen for any attempts to call changePage().
+        $(document).bind( "pagebeforechange", function( e, data ) {
+            // We only want to handle changePage() calls where the caller is
+            // asking us to load a page by URL.
+            if ( typeof data.toPage === "string" ) {
+                // We are being asked to load a page by URL, but we only
+                // want to handle URLs that request the data for a specific
+                // category.
+                var u = $.mobile.path.parseUrl( data.toPage ),
+                    re = /^#category-item/;
+                if ( u.hash.search(re) !== -1 ) {
+                    // We're being asked to display the items for a specific category.
+                    // Call our internal method that builds the content for the category
+                    // on the fly based on our in-memory category data structure.
+                    showCategory( u, data.options );
+
+                    // Make sure to tell changePage() we've handled this call so it doesn't
+                    // have to do anything.
+                    e.preventDefault();
+                }
+            }
+        });
+
+    </script>
 </head> 
 <body> 
 
-<div data-role="page">
+<div id="home" data-role="page">
 
 	<div data-role="header">
 		<h1>Off Menu</h1> 
@@ -17,35 +161,35 @@
 	<div data-role="content">	
 		<ul data-role="listview" data-theme="c" data-filter="true" data-input="#filterable-input">
 			<li>
-				<a href="#"> 
+				<a href="#category-items?category=chantecler" >
 				<img src="./thumbs/Chantecler.png"> 
 				<h1>Chantecler</h1>
 				<span class="ui-li-count">2</span>
 				</a>
 			</li>
 			<li>
-				<a href="#"> 
+				<a href="#category-items?category=leslievillePumps"> 
 				<img src="./thumbs/LeslievillePumps.png"> 
 				<h1>Leslieville Pumps</h1>
 				<span class="ui-li-count">3</span>
 				</a>
 			</li>
 			<li>
-				<a href="#"> 
+				<a href="#category-items?category=rockLobster"> 
 				<img src="./thumbs/RockLobster.png"> 
 				<h1>Rock Lobster Food Co.</h1>
 				<span class="ui-li-count">6</span>
 				</a>
 			</li>
 			<li>
-				<a href="#"> 
+				<a href="#category-items?category=burgerPriest"> 
 				<img src="./thumbs/BurgerPriest.png"> 
 				<h1>The Burger’s Priest</h1>
 				<span class="ui-li-count">7</span>
 				</a>
 			</li>
 			<li>
-				<a href="#"> 
+				<a href="#category-items?category=barIsabel"> 
 				<img src="./thumbs/BarIsabel.png"> 
 				<h1>Bar Isabel</h1>
 				<span class="ui-li-count">22</span>
@@ -58,6 +202,10 @@
 		<h4>Ad PlaceHolder</h4>
 	</div><!-- /footer -->
 </div><!-- /page -->
+<div id="category-items" data-role="page" data-url="category-items">
+  <div data-role="header"><h1></h1></div>
+  <div data-role="content"></div>
+</div>
 
 </body>
 </html>
